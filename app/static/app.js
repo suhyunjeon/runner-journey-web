@@ -597,10 +597,10 @@ function formatDateRange(start, end) {
 
 function buildDetailActions(detailSource) {
   const links = [
-    detailSource.apply_url
+    isRealExternalUrl(detailSource.apply_url)
       ? `<a class="detail-link primary" href="${detailSource.apply_url}" target="_blank" rel="noreferrer">신청하기</a>`
       : "",
-    detailSource.official_url
+    isRealExternalUrl(detailSource.official_url)
       ? `<a class="detail-link secondary" href="${detailSource.official_url}" target="_blank" rel="noreferrer">공식 사이트 바로가기</a>`
       : "",
   ].filter(Boolean);
@@ -628,6 +628,9 @@ function buildDetailNotes(detail, detailSource, item) {
   }
   if (!notes.length) {
     notes.push("접수 마감일, 장소, 공식 신청 페이지를 먼저 확인해보세요.");
+  }
+  if (!isRealExternalUrl(detailSource.apply_url) && !isRealExternalUrl(detailSource.official_url)) {
+    notes.push("이 대회는 아직 실제 외부 링크를 연결하지 못해 기본 정보만 먼저 제공하고 있어요.");
   }
   return notes;
 }
@@ -676,6 +679,19 @@ function formatContact(phone, email) {
     return `${phone} / ${email}`;
   }
   return phone || email || "확인 필요";
+}
+
+function isRealExternalUrl(value) {
+  if (!value) {
+    return false;
+  }
+
+  try {
+    const url = new URL(value);
+    return !["example.com", "www.example.com"].includes(url.hostname);
+  } catch {
+    return false;
+  }
 }
 
 function renderError(message) {
