@@ -2,6 +2,7 @@ from datetime import date
 
 from sqlalchemy import inspect, select, text
 
+from app.config import settings
 from app.database import Base, engine
 from app.models import RaceModel, RunnerProfileModel
 from app.seed.races import SEED_RACES
@@ -13,8 +14,14 @@ def init_db() -> None:
 
 
 def seed_db(session) -> None:
+    if not _use_seed_races():
+        session.query(RaceModel).filter(RaceModel.slug.in_(_seed_race_slugs())).delete(
+            synchronize_session=False
+        )
+        session.commit()
+
     has_data = session.scalar(select(RaceModel.slug).limit(1))
-    if not has_data:
+    if not has_data and _use_seed_races():
         for race in SEED_RACES:
             session.add(
                 RaceModel(
@@ -91,3 +98,11 @@ def _ensure_race_columns() -> None:
                 connection.execute(
                     text("ALTER TABLE runner_profiles ALTER COLUMN target_distance TYPE VARCHAR(40)")
                 )
+
+
+def _use_seed_races() -> bool:
+    return settings.database_url.startswith("sqlite")
+
+
+def _seed_race_slugs() -> list[str]:
+    return [race["slug"] for race in SEED_RACES]
