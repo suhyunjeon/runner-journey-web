@@ -1,6 +1,6 @@
 from datetime import date
 
-from sqlalchemy import select, text
+from sqlalchemy import inspect, select, text
 
 from app.database import Base, engine
 from app.models import RaceModel, RunnerProfileModel
@@ -74,11 +74,16 @@ def _ensure_race_columns() -> None:
         "course_note": "ALTER TABLE races ADD COLUMN course_note VARCHAR(255)",
     }
 
+    if engine.dialect.name != "sqlite":
+        return
+
+    inspector = inspect(engine)
+    if "races" not in inspector.get_table_names():
+        return
+
+    existing = {column["name"] for column in inspector.get_columns("races")}
+
     with engine.begin() as connection:
-        table_info = connection.execute(text("PRAGMA table_info(races)")).fetchall()
-        if not table_info:
-            return
-        existing = {row[1] for row in table_info}
         for column_name, ddl in required_columns.items():
             if column_name not in existing:
                 connection.execute(text(ddl))
