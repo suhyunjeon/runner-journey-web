@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Runner Journey</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=Noto+Sans+KR:wght@400;500;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="/static/styles.css?v=20260505-1340" />
+  </head>
+  <body>
+    <div class="app-shell">
+      <header class="topbar">
+        <div>
+          <p class="eyebrow">RUNNER JOURNEY</p>
+          <h1>오늘의 레이스 전략</h1>
+        </div>
+        <div class="topbar-actions">
+          <button class="ghost-chip" id="refresh-button" type="button">새로고침</button>
+          <button class="ghost-chip" id="edit-profile-button" type="button">프로필</button>
+        </div>
+      </header>
+      <p class="topbar-status" id="refresh-status" aria-live="polite"></p>
+
+      <nav class="tabbar">
+        <button class="tab-button is-active" data-tab-target="home-tab" type="button">홈</button>
+        <button class="tab-button" data-tab-target="catalog-tab" type="button">대회 탐색</button>
+        <button class="tab-button" data-tab-target="plan-tab" type="button">훈련 플랜</button>
+        <button class="tab-button" data-tab-target="profile-tab" type="button">내 설정</button>
+      </nav>
+
+      <main id="app">
+        <section class="page tab-page home-layout is-active" id="home-tab">
+          <section class="hero-card skeleton-block home-hero" id="hero-card">
+            <p class="hero-kicker">추천 로딩 중</p>
+            <h2>당신에게 맞는 다음 레이스를 찾고 있어요</h2>
+          </section>
+
+          <section class="stats-grid home-stats" id="stats-grid"></section>
+
+          <section class="panel two-tone home-actions">
+            <div class="panel-header">
+              <p class="section-kicker">Next Move</p>
+              <h3>지금 하면 좋은 3가지</h3>
+            </div>
+            <div class="action-list" id="action-list"></div>
+          </section>
+
+          <section class="panel home-insights">
+            <div class="panel-header">
+              <p class="section-kicker">Coach Notes</p>
+              <h3>오늘의 인사이트</h3>
+            </div>
+            <div class="insight-stack" id="insight-stack"></div>
+          </section>
+
+          <section class="panel timeline-panel home-timeline">
+            <div class="panel-header">
+              <p class="section-kicker">Training Arc</p>
+              <h3>훈련 진행 단계</h3>
+            </div>
+            <div class="timeline" id="timeline"></div>
+          </section>
+
+          <section class="panel home-nearby">
+            <div class="panel-header">
+              <p class="section-kicker">Close To Home</p>
+              <h3>가까운 추천 대회</h3>
+            </div>
+            <div class="card-rail" id="nearby-list"></div>
+          </section>
+
+          <section class="panel accent-panel home-longterm">
+            <div class="panel-header">
+              <p class="section-kicker">Long Game</p>
+              <h3>장기 목표 후보</h3>
+            </div>
+            <div class="card-rail" id="longterm-list"></div>
+          </section>
+        </section>
+
+        <section class="page tab-page" id="catalog-tab">
+          <section class="panel">
+            <div class="panel-header">
+              <p class="section-kicker">Race Catalog</p>
+              <h3>전체 마라톤 대회</h3>
+            </div>
+            <div class="catalog-controls">
+              <label class="field">
+                <span>접수 상태</span>
+                <select id="catalog-status">
+                  <option value="">전체</option>
+                  <option value="registration_open">접수 중</option>
+                  <option value="registration_upcoming">오픈 예정</option>
+                  <option value="registration_closed">접수 마감</option>
+                </select>
+              </label>
+              <label class="field">
+                <span>지역</span>
+                <select id="catalog-region">
+                  <option value="">전체</option>
+                  <option value="서울">서울</option>
+                  <option value="부산">부산</option>
+                  <option value="대구">대구</option>
+                  <option value="인천">인천</option>
+                  <option value="광주">광주</option>
+                  <option value="대전">대전</option>
+                  <option value="울산">울산</option>
+                  <option value="세종">세종</option>
+                  <option value="경기">경기</option>
+                  <option value="강원">강원</option>
+                  <option value="충북">충북</option>
+                  <option value="충남">충남</option>
+                  <option value="전북">전북</option>
+                  <option value="전남">전남</option>
+                  <option value="경북">경북</option>
+                  <option value="경남">경남</option>
+                  <option value="제주">제주</option>
+                </select>
+              </label>
+              <label class="field field-wide">
+                <span>검색</span>
+                <input id="catalog-search" type="search" placeholder="대회명, 장소로 검색" />
+              </label>
+            </div>
+            <div class="catalog-summary" id="catalog-summary">대회 목록을 불러오는 중이에요.</div>
+            <div class="catalog-grid" id="catalog-list"></div>
+          </section>
+        </section>
+
+        <section class="page tab-page" id="plan-tab">
+          <section class="panel coach-panel">
+            <div class="panel-header">
+              <p class="section-kicker">Race Focus</p>
+              <h3>선택한 대회 정보</h3>
+            </div>
+            <div id="detail-panel" class="detail-panel">
+              <div class="empty-note">홈이나 대회 탐색에서 대회를 선택하면 기본 정보와 바로가기 버튼이 여기에 보여요.</div>
+            </div>
+          </section>
+
+          <section class="panel">
+            <div class="panel-header">
+              <p class="section-kicker">Weekly Rhythm</p>
+              <h3>12주 준비 캘린더</h3>
+            </div>
+            <div id="calendar-grid" class="calendar-grid"></div>
+          </section>
+        </section>
+
+        <section class="page tab-page" id="profile-tab">
+          <section class="panel profile-panel">
+            <div class="panel-header">
+              <p class="section-kicker">Runner Setup</p>
+              <h3>내 러닝 프로필</h3>
+            </div>
+            <form id="profile-form" class="profile-form">
+              <label class="field">
+                <span>닉네임</span>
+                <input name="nickname" type="text" required />
+              </label>
+              <label class="field">
+                <span>거주 지역</span>
+                <select name="home_region" required>
+                  <option value="서울">서울</option>
+                  <option value="부산">부산</option>
+                  <option value="대구">대구</option>
+                  <option value="인천">인천</option>
+                  <option value="광주">광주</option>
+                  <option value="대전">대전</option>
+                  <option value="울산">울산</option>
+                  <option value="세종">세종</option>
+                  <option value="경기">경기</option>
+                  <option value="강원">강원</option>
+                  <option value="충북">충북</option>
+                  <option value="충남">충남</option>
+                  <option value="전북">전북</option>
+                  <option value="전남">전남</option>
+                  <option value="경북">경북</option>
+                  <option value="경남">경남</option>
+                  <option value="제주">제주</option>
+                </select>
+              </label>
+              <label class="field">
+                <span>경험 수준</span>
+                <select name="experience_level">
+                  <option value="beginner">beginner</option>
+                  <option value="intermediate">intermediate</option>
+                  <option value="advanced">advanced</option>
+                </select>
+              </label>
+              <label class="field">
+                <span>목표 거리</span>
+                <select name="target_distance" required>
+                  <option value="5km">5km</option>
+                  <option value="10km">10km</option>
+                  <option value="Half">Half</option>
+                  <option value="Marathon">Marathon</option>
+                  <option value="Ultra">Ultra</option>
+                </select>
+              </label>
+              <label class="field">
+                <span>목표 날짜</span>
+                <input name="target_event_date" type="date" required />
+              </label>
+              <label class="field">
+                <span>주간 러닝 횟수</span>
+                <input name="weekly_run_days" type="number" min="1" max="7" required />
+              </label>
+              <label class="field">
+                <span>선호 노면</span>
+                <select name="preferred_surface">
+                  <option value="road">road</option>
+                  <option value="trail">trail</option>
+                  <option value="mixed">mixed</option>
+                </select>
+              </label>
+              <label class="field">
+                <span>이동 범위</span>
+                <select name="travel_willingness">
+                  <option value="local_only">집 근처만</option>
+                  <option value="regional">인접 지역까지</option>
+                  <option value="nationwide">전국 어디든</option>
+                </select>
+              </label>
+              <label class="field field-wide">
+                <span>메모</span>
+                <textarea name="notes" rows="4"></textarea>
+              </label>
+              <div class="profile-actions">
+                <button class="primary-button" type="submit">프로필 저장</button>
+                <p id="profile-status" class="form-status"></p>
+              </div>
+            </form>
+          </section>
+
+          <section class="panel onboarding-panel">
+            <div class="panel-header">
+              <p class="section-kicker">Setup Status</p>
+              <h3>온보딩 진행 상태</h3>
+            </div>
+            <div id="onboarding-status" class="empty-note">설정 상태를 확인하는 중이에요.</div>
+          </section>
+        </section>
+      </main>
+    </div>
+
+    <template id="stat-template">
+      <article class="stat-card">
+        <p class="stat-label"></p>
+        <strong class="stat-value"></strong>
+      </article>
+    </template>
+
+    <template id="race-card-template">
+      <article class="race-card" role="button" tabindex="0">
+        <div class="race-card-head">
+          <p class="race-region"></p>
+          <p class="race-distance"></p>
+        </div>
+        <h4 class="race-title"></h4>
+        <p class="race-meta"></p>
+        <p class="race-reason"></p>
+        <div class="race-card-actions">
+          <button class="bookmark-button" type="button">찜하기</button>
+        </div>
+      </article>
+    </template>
+
+    <script src="/static/app.js?v=20260505-1340" defer></script>
+  </body>
+</html>
