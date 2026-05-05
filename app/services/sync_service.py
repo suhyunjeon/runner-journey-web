@@ -1,4 +1,5 @@
 from sqlalchemy.orm import Session
+from sqlalchemy.exc import SQLAlchemyError
 
 from app.collectors.base import BaseCollector
 from app.enrichers.official_page import OfficialPageEnricher
@@ -16,21 +17,39 @@ class SyncService:
         created = 0
         updated = 0
         enriched = 0
+        failed = 0
 
         for race in races:
-            race = self.enricher.enrich(race)
-            enriched += 1
-            existing = self.session.get(RaceModel, race.slug)
-            if existing is None:
-                self.session.add(self._to_model(race))
-                created += 1
-                continue
+            try:
+                race = self.enricher.enrich(race)
+                race = self._sanitize_race(race)
+                enriched += 1
+                existing = self.session.get(RaceModel, race.slug)
+                if existing is None:
+                    self.session.add(self._to_model(race))
+                    self.session.commit()
+                    created += 1
+                    continue
 
-            self._update_model(existing, race)
-            updated += 1
+                self._update_model(existing, race)
+                self.session.commit()
+                updated += 1
+            except SQLAlchemyError as exc:
+                self.session.rollback()
+                failed += 1
+                print(f"[sync] failed to persist {race.slug}: {exc}")
+            except Exception as exc:
+                self.session.rollback()
+                failed += 1
+                print(f"[sync] failed to process {race.slug}: {exc}")
 
-        self.session.commit()
-        return {"fetched": len(races), "enriched": enriched, "created": created, "updated": updated}
+        return {
+            "fetched": len(races),
+            "enriched": enriched,
+            "created": created,
+            "updated": updated,
+            "failed": failed,
+        }
 
     def _to_model(self, race: RaceDetail) -> RaceModel:
         return RaceModel(
@@ -59,6 +78,33 @@ class SyncService:
             source_url=str(race.source_url) if race.source_url else None,
             last_checked_at=race.last_checked_at,
         )
+
+    def _sanitize_race(self, race: RaceDetail) -> RaceDetail:
+        return race.model_copy(
+            update={
+                "slug": self._limit(race.slug, 120),
+                "title": self._limit(race.title, 200),
+                "region": self._limit(race.region, 40),
+                "venue": self._limit(race.venue, 200),
+                "registration_status": self._limit(race.registration_status, 40),
+                "distances": [self._limit(distance, 40) for distance in race.distances],
+                "thumbnail_url": self._limit(str(race.thumbnail_url), 500) if race.thumbnail_url else None,
+                "start_time": self._limit(race.start_time, 80) if race.start_time else None,
+                "event_status": self._limit(race.event_status, 40),
+                "official_url": self._limit(str(race.official_url), 500) if race.official_url else None,
+                "apply_url": self._limit(str(race.apply_url), 500) if race.apply_url else None,
+                "contact_email": self._limit(race.contact_email, 255) if race.contact_email else None,
+                "contact_phone": self._limit(race.contact_phone, 50) if race.contact_phone else None,
+                "organizer": self._limit(race.organizer, 255) if race.organizer else None,
+                "entry_fee_note": self._limit(race.entry_fee_note, 255) if race.entry_fee_note else None,
+                "cutoff_note": self._limit(race.cutoff_note, 255) if race.cutoff_note else None,
+                "course_note": self._limit(race.course_note, 255) if race.course_note else None,
+                "source_url": self._limit(str(race.source_url), 500) if race.source_url else None,
+            }
+        )
+
+    def _limit(self, value: str, max_length: int) -> str:
+        return value[:max_length]
 
     def _update_model(self, model: RaceModel, race: RaceDetail) -> None:
         model.title = race.title

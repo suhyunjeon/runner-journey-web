@@ -74,16 +74,20 @@ def _ensure_race_columns() -> None:
         "course_note": "ALTER TABLE races ADD COLUMN course_note VARCHAR(255)",
     }
 
-    if engine.dialect.name != "sqlite":
-        return
-
     inspector = inspect(engine)
-    if "races" not in inspector.get_table_names():
+    table_names = set(inspector.get_table_names())
+    if "races" not in table_names:
         return
-
-    existing = {column["name"] for column in inspector.get_columns("races")}
 
     with engine.begin() as connection:
+        race_columns = {column["name"] for column in inspector.get_columns("races")}
         for column_name, ddl in required_columns.items():
-            if column_name not in existing:
+            if column_name not in race_columns and engine.dialect.name == "sqlite":
                 connection.execute(text(ddl))
+
+        if engine.dialect.name == "postgresql":
+            connection.execute(text("ALTER TABLE races ALTER COLUMN start_time TYPE VARCHAR(80)"))
+            if "runner_profiles" in table_names:
+                connection.execute(
+                    text("ALTER TABLE runner_profiles ALTER COLUMN target_distance TYPE VARCHAR(40)")
+                )
